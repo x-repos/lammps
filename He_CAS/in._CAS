@@ -1,0 +1,100 @@
+# test BHS potential for alpha-quartz
+# check the lammps manual for details
+
+# choose unit system. see manual
+units		metal
+
+# schedule
+variable TK1   equal 300
+variable Pbar1 equal 2.0e3
+
+# 3d periodic system
+boundary	p p p
+
+# atoms have charge
+atom_style	charge
+
+# read the unit cell structure 
+#read_data	data8.dat
+read_restart   inCAS.dat
+
+group	Ca	type 	1
+group	Al	type 	2
+group	Si	type 	3
+group	O	type 	4
+
+
+
+#change_box all triclinic
+#change_box all ortho
+
+
+# make 8x8x8 supercell. 3* 3*3*10=270 atoms
+#replicate       1 1 1
+
+# BKS interaction in PRL 64 1955 (1990)
+# with Ewald method for long range coulomb
+pair_style buck/coul/long 10
+#pair_modify shift yes
+
+# potential
+pair_coeff 1 1  9684.976	0.290023	0.0
+pair_coeff 1 2  4879.785	0.290023	0.0
+pair_coeff 1 3  1362.401	0.222618	0.0
+pair_coeff 1 4  3718.745	0.290618	0.0
+pair_coeff 2 2  2444.136	0.273973	0.0
+pair_coeff 2 3  2219.246	0.290023	0.0
+pair_coeff 2 4  1945.759	0.282008	0.0
+pair_coeff 3 3  1.8662e19	0.02500		0.0
+pair_coeff 3 4  223440.540	0.142419	0.0
+pair_coeff 4 4  15812.842	0.26001		0.0
+
+kspace_style  ewald/disp 1e-6
+
+#end potential
+
+# set inital velocity of particles for T=3500K
+velocity	all create 300 277387 mom yes
+
+# set neighour atom list
+neighbor	0.3 bin
+neigh_modify	delay 10
+
+# nve ensemble simulaton with dt=1 fs
+timestep	0.001
+thermo          10000
+#thermo_style    custom step temp pxx pyy pzz pxy pxz pyz lx ly lz xy xz yz press vol 
+thermo_style  custom step temp press  vol density 
+
+
+# output xyz trajectory file
+ dump 1 all xyz 50000 trajectory.xyz 
+ dump_modify	1 element 1 2 3 4
+
+#dump            1 all atom 10000 SiO2_${Pbar1}bar_${TK1}K.lammpstrj
+
+
+
+#fix		1 all nve
+#compute 1	 Ca 	 msd 
+#fix  2		Ca ave/time	1  1   1000    c_1[4]	file CAS_Ca.msd
+
+#compute 2 	Al 	 msd 
+#fix  3		Al  ave/time	1  1   1000    c_2[4]	file CAS_Al.msd
+
+#compute 3 	Si 	 msd 
+#fix  4		Ca ave/time	1  1   1000    c_3[4]	file CAS_Si.msd
+
+#compute 4	 O 	 msd 
+#fix  5		O ave/time	1  1   1000    c_4[4]	file CAS_O.msd
+
+# run 2000 time steps
+fix             1 all npt temp ${TK1}  ${TK1} 100 iso ${Pbar1} ${Pbar1} 1000
+# run 1000 time  steps
+#run 1000
+restart 	1000000 	restart.*
+#write_restart	data10.dat
+#restart2data	temp.restart.1000000	temp.restart.data
+run 3000000
+write_restart    inCAS.dat
+
