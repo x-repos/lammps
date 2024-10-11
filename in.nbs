@@ -13,9 +13,10 @@ atom_style	charge
 
 # read the unit cell structure of alpha-quartz (3SiO2) in data.quartz file
 #read_restart	in_NBS.dat
+read_restart dataNBS.dat
 
 #read_restart	temp.restart.34550000
-read_data	dataNBS.dat
+# read_data	dataNBS.dat
 
 group	Na 	 type 	1
 group	B 	 type 	2
