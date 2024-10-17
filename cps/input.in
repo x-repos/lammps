@@ -1,4 +1,5 @@
-# mpirun -np 16 lmp_mpi -in inCPS.CPS
+# mpirun -np 16 lmp -in input.in
+# mpirun -np 6 lmp -in input.in
 
 # npt1 -> npt2 -> nve
 # npt1: input: initial/random coordinates for all particles
@@ -12,18 +13,25 @@
 units		    metal                           # amstrong, bar, eV, K, ...
 variable    	TK1 equal 3000                  # temperature
 variable    	Pbar1 equal 1.0e0               # pressure
+variable        nsteps equal 1000               # number of time steps
 boundary	    p p p                           # periodic boudaries
 atom_style	    charge                          # electrostatic interactions
 
 # read the mass, coordinates of particles and box size
 read_data	dataCPS_5.dat
-#read_restart	restart_CPS.dat             # for the latter simulation
+# read_restart	restart_CPS.dat             # for the latter simulation
 
 # particle types
 group 		Ca    type    1
 group 		P     type    2
 group 		Si    type    3
 group 		O     type    4
+
+# Assign charges to ions/do not need, Lammps automatically gives this
+#set type 1 charge +2.0   # Ca²⁺
+#set type 2 charge +5.0   # P⁵⁺
+#set type 3 charge +4.0   # Si⁴⁺
+#set type 4 charge -2.0   # O²⁻
 
 # set velocity based on the velocity
 # 3000: temperature
@@ -62,7 +70,7 @@ neigh_modify	delay 10
 # fix		1 all nve
 
 # print out with thermo each 100 timesteps
-thermo		1000
+thermo		100
 timestep	0.0005
 
 thermo_style	custom	step	temp	press	vol	density	pe	ke	etotal
@@ -95,13 +103,13 @@ fix 4  Si 	ave/time  1  1    1000  c_3[4]   file  CPS_Si.msd
 compute 	4	O 	msd
 fix 5  O 	ave/time  1  1    1000  c_4[4]   file  CPS_O.msd
 
-# run with 10000 steps
-run 10000
+# run with nsteps steps
+run ${nsteps}
 
 # write files
 # for writing the final results
 write_restart    xx.dat
 
-# for writing each 100 steps/track losing
-# restart    100  restart_CPS.dat
+# for writing each nsteps steps/track losing
+# restart    ${nsteps}  restart_CPS.dat
 
