@@ -1,4 +1,5 @@
 LAMMPS (29 Aug 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
   using 1 OpenMP thread(s) per MPI task
 # choose unit system. see manual
 units		metal
@@ -17,10 +18,10 @@ atom_style	charge
 read_data	dataCPS_5.dat
 Reading data file ...
   orthogonal box = (-1.5 -1.5 -1.5) to (43.8663 43.8663 43.8663)
-  1 by 1 by 1 MPI processor grid
+  2 by 1 by 2 MPI processor grid
   reading atoms ...
   5415 atoms
-  read_data CPU = 0.018 seconds
+  read_data CPU = 0.015 seconds
 #read_restart	restart_CPS.dat
 group Ca type  1
 665 atoms in group Ca
@@ -130,50 +131,5 @@ Neighbor list info ...
       stencil: none
       bin: none
   vectors: nbox = 14, nkvec = 5756
-Per MPI rank memory allocation (min/avg/max) = 33.38 | 33.38 | 33.38 Mbytes
-   Step          Temp          Press          Volume        Density         TotEng         PotEng         KinEng    
-         0   3000           12352406       93368.435      2.1212348      207635.01      205535.57      2099.4433    
-       100   444542.76      5457836        94229.931      2.1018415      200640.67     -110456.76      311097.43    
-       200   432720.74      5147582.1      96251.391      2.0576988      191664.93     -111159.28      302824.21    
-       300   419798.65      4890868.5      98198.284      2.0169026      182531.56     -111249.59      293781.15    
-       400   410004.51      4733864.9      100079.91      1.9789823      174369.4      -112557.67      286927.07    
-       500   403645.3       4400197.2      101981.9       1.9420739      166534.99     -115941.81      282476.81    
-       600   393858.11      4158617.8      103727.82      1.9093854      159154.07     -116473.52      275627.59    
-       700   385198.27      3946940.3      105355.95      1.8798785      151687.71     -117879.59      269567.3     
-       800   376315.23      3806455.4      106929.96      1.8522065      144654.25     -118696.58      263350.83    
-       900   367700.67      3647098.1      108469.55      1.8259169      137497.36     -119824.87      257322.23    
-      1000   364040.23      3473785.1      109982.98      1.8007911      130629.85     -124130.75      254760.6     
-Loop time of 249.15 on 1 procs for 1000 steps with 5415 atoms
-
-Performance: 0.173 ns/day, 138.417 hours/ns, 4.014 timesteps/s, 21.734 katom-step/s
-99.8% CPU use with 1 MPI tasks x 1 OpenMP threads
-
-MPI task timing breakdown:
-Section |  min time  |  avg time  |  max time  |%varavg| %total
----------------------------------------------------------------
-Pair    | 20.765     | 20.765     | 20.765     |   0.0 |  8.33
-Kspace  | 225.9      | 225.9      | 225.9      |   0.0 | 90.67
-Neigh   | 1.9316     | 1.9316     | 1.9316     |   0.0 |  0.78
-Comm    | 0.088913   | 0.088913   | 0.088913   |   0.0 |  0.04
-Output  | 0.00058515 | 0.00058515 | 0.00058515 |   0.0 |  0.00
-Modify  | 0.44854    | 0.44854    | 0.44854    |   0.0 |  0.18
-Other   |            | 0.01319    |            |       |  0.01
-
-Nlocal:           5415 ave        5415 max        5415 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
-Nghost:          10461 ave       10461 max       10461 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:         609117 ave      609117 max      609117 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
-
-Total # of neighbors = 609117
-Ave neighs/atom = 112.48698
-Neighbor list builds = 100
-Dangerous builds = 100
-
-# run 200000 time steps
-# run 30000000
-# restart    10000000  restart_CPS.dat
-# write_restart  restart_CPS.dat
-
-Total wall time: 0:04:09
+Per MPI rank memory allocation (min/avg/max) = 28.66 | 28.85 | 29.42 Mbytes
+   Step          Temp          Press          Volume        

@@ -1,0 +1,107 @@
+# mpirun -np 16 lmp_mpi -in inCPS.CPS
+
+# npt1 -> npt2 -> nve
+# npt1: input: initial/random coordinates for all particles
+# npt1: settup temp, pressure, atoms, ... with small timestep: 0.0005/0.0001 because the intial energy is large 
+# npt1: output restart1.dat
+# npt2: input restart.dat, set up with the bigger timestep: 0.001 (1fs)
+# npt2: output restart2.dat
+# nve: input restart2.dat
+
+# inputs and settup
+units		    metal                           # amstrong, bar, eV, K, ...
+variable    	TK1 equal 3000                  # temperature
+variable    	Pbar1 equal 1.0e0               # pressure
+boundary	    p p p                           # periodic boudaries
+atom_style	    charge                          # electrostatic interactions
+
+# read the mass, coordinates of particles and box size
+read_data	dataCPS_5.dat
+#read_restart	restart_CPS.dat             # for the latter simulation
+
+# particle types
+group 		Ca    type    1
+group 		P     type    2
+group 		Si    type    3
+group 		O     type    4
+
+# set velocity based on the velocity
+# 3000: temperature
+# 277387: random number seed
+# mom yes: total momentum of the system is zero
+velocity	all create 3000 277387 mom yes
+
+# buck: Buckingham potential for short range interactions
+# coul: Coulomb potential for long range interactions
+# long: long-range corrections applied to the Coulombic interactions using Ewald summation or PPPM
+# 10: cutoff distance.Within 10 A, Buckingham and Coulomb potentials are applied.
+# Beyond 10 A. Buckingham is not applied. Coulomb potential is corrected using Ewald.
+pair_style buck/coul/long 10.0
+
+# coefficients for potentials i, j, A, rho, C
+pair_coeff	1 1  329171.5        0.15873         4.3
+pair_coeff	1 2  26684.4         0.15873         0.0
+pair_coeff	1 3  164585.8        0.08000         0.0
+pair_coeff	1 4  718088.6        0.163934        8.7
+pair_coeff	2 2  2163.2          0.15873         0.0
+pair_coeff	2 3  1081.6          0.08000         0.0
+pair_coeff	2 4  62817.2         0.163934        0.0
+pair_coeff	3 3  1.0e-50         1.0e50          0.0
+pair_coeff	3 4  1847.7          0.287145        0.0
+pair_coeff	4 4  1497594.3       0.169492        17.4
+
+#  The accuracy of the Ewald summation
+kspace_style ewald/disp 1e-4 
+
+# Set neighour atom list/skin distance 10 + 0.3 = 10.3
+# Do not need to modify
+neighbor	0.3 bin
+neigh_modify	delay 10
+
+# NVE ensemble simulaton with dt=1 fs
+# fix		1 all nve
+
+# print out with thermo each 100 timesteps
+thermo		1000
+timestep	0.0005
+
+thermo_style	custom	step	temp	press	vol	density	pe	ke	etotal
+
+# output trajectory to xyz file every 50000 timesteps
+# do not need to change
+dump 		1 all xyz 50000 trajectory.xyz 
+dump_modify	1 element  1 2 3 4
+
+
+
+# 1st: run the npt
+# starting temp/press -> target temp/press
+# iso: pressure is controlled isotropically
+# 10: damping parameter for temp/press
+fix 1 all npt temp ${TK1} ${TK1} 10 iso ${Pbar1} ${Pbar1} 10
+
+# 2st: run the nve after getting the equilibrium state
+# fix 1 all nve
+
+# compute mean squared distance
+# do not need to change
+# compute 	1	all	msd
+compute 	1	Ca 	msd
+fix 2  Ca 	ave/time  1  1    1000  c_1[4]   file  CPS_Ca.msd
+compute 	2	P 	msd
+fix 3  P 	ave/time  1  1    1000  c_2[4]   file  CPS_P.msd
+compute 	3	Si 	msd
+fix 4  Si 	ave/time  1  1    1000  c_3[4]   file  CPS_Si.msd
+compute 	4	O 	msd
+fix 5  O 	ave/time  1  1    1000  c_4[4]   file  CPS_O.msd
+
+# run with 10000 steps
+run 10000
+
+# write files
+# for writing the final results
+write_restart    xx.dat
+
+# for writing each 100 steps/track losing
+# restart    100  restart_CPS.dat
+

@@ -1,0 +1,77 @@
+units		metal
+
+variable TK1   equal 300
+variable Pbar1 equal 2.0e3
+
+boundary	p p p
+
+atom_style	charge
+
+# read the unit cell structure 
+#read_data	data8.dat
+read_restart   inCAS.dat
+
+group	Ca	type 	1
+group	Al	type 	2
+group	Si	type 	3
+group	O	type 	4
+
+
+velocity	all create 3000 277387 mom yes
+
+
+pair_style buck/coul/long 10
+
+
+?kspace_style ewald/disp 1e-4 # for ewald simulation, 1e-6 the accuracy for Ewald summation
+
+neighbor	0.3 bin
+neigh_modify	delay 10
+
+
+?# nve ensemble simulaton with dt=1 fs
+timestep	0.001       #0.001 ps = 1 fs
+thermo          10000   #printing
+#thermo_style    custom step temp pxx pyy pzz pxy pxz pyz lx ly lz xy xz yz press vol 
+thermo_style  custom step temp press  vol density 
+
+
+# Buckingham potential pair_coeff i j A ρ C
+
+pair_coeff 1 1  9684.976	0.290023	0.0
+pair_coeff 1 2  4879.785	0.290023	0.0
+pair_coeff 1 3  1362.401	0.222618	0.0
+pair_coeff 1 4  3718.745	0.290618	0.0
+pair_coeff 2 2  2444.136	0.273973	0.0
+pair_coeff 2 3  2219.246	0.290023	0.0
+pair_coeff 2 4  1945.759	0.282008	0.0
+pair_coeff 3 3  1.8662e19	0.02500		0.0
+pair_coeff 3 4  223440.540	0.142419	0.0
+pair_coeff 4 4  15812.842	0.26001		0.0
+
+
+# output xyz trajectory file
+ dump 1 all xyz 50000 trajectory.xyz 
+ dump_modify	1 element 1 2 3 4
+
+
+fix 1 all npt temp ${TK1} ${TK1} 10 iso ${Pbar1} ${Pbar1} 10
+
+#fix 1 all nve
+
+compute 	1	Ca 	msd
+fix 2  Ca ave/time  1  1    1000  c_1[4]   file  CPS_Ca.msd
+compute 	2	P 	msd
+fix 3  P ave/time  1  1    1000  c_2[4]   file  CPS_P.msd
+
+compute 	3	Si 	msd
+fix 4  Si ave/time  1  1    1000  c_3[4]   file  CPS_Si.msd
+compute 	4	O 	msd
+fix 5  O ave/time  1  1    1000  c_4[4]   file  CPS_O.msd
+
+run 1000
+
+# run 200000 time steps
+# run 30000000
+# restart    10000000  restart_CPS.dat
+# write_restart  restart_CPS.dat
