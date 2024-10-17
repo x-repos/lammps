@@ -71,7 +71,7 @@ neigh_modify	delay 10
 
 # print out with thermo each 100 timesteps
 thermo		100
-timestep	0.0005
+timestep	0.0005          #0.001 = 1 fs
 
 thermo_style	custom	step	temp	press	vol	density	pe	ke	etotal
 
@@ -112,4 +112,3 @@ write_restart    xx.dat
 
 # for writing each nsteps steps/track losing
 # restart    ${nsteps}  restart_CPS.dat
-
