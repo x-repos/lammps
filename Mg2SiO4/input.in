@@ -13,7 +13,7 @@
 units		    metal                           # amstrong, bar, eV, K, ...
 variable    	TK1 equal 3000                  # temperature
 variable    	Pbar1 equal 1.0e0               # pressure
-variable        nsteps equal 1000               # number of time steps
+variable        nsteps equal 1000000               # number of time steps
 boundary	    p p p                           # periodic boudaries
 atom_style	    charge                          # electrostatic interactions
 
