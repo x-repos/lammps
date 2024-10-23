@@ -73,7 +73,7 @@ neigh_modify	delay 10
 
 # print out with thermo each 100 timesteps
 thermo		100
-timestep	0.0005          #0.001 = 1 fs
+timestep	0.001          #0.001 = 1 fs
 
 thermo_style	custom	step	temp	press	vol	density	pe	ke	etotal
 
