@@ -18,7 +18,7 @@ boundary	    p p p                           # periodic boudaries
 atom_style	    charge                          # electrostatic interactions
 
 # read the mass, coordinates of particles and box size
-read_data	dataCPS_5.dat
+read_data	dataCPS_5.tsv
 # read_restart	restart_CPS.dat             # for the latter simulation
 
 # particle types
@@ -28,10 +28,10 @@ group 		Si    type    3
 group 		O     type    4
 
 # Assign charges to ions/do not need, Lammps automatically gives this
-#set type 1 charge +2.0   # Ca²⁺
-#set type 2 charge +5.0   # P⁵⁺
-#set type 3 charge +4.0   # Si⁴⁺
-#set type 4 charge -2.0   # O²⁻
+set type 1 charge +2.0   # Ca²⁺
+set type 2 charge +5.0   # P⁵⁺
+set type 3 charge +4.0   # Si⁴⁺
+set type 4 charge -2.0   # O²⁻
 
 # set velocity based on the velocity
 # 3000: temperature

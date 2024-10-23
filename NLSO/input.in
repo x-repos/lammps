@@ -1,12 +1,9 @@
-LAMMPS (29 Aug 2024)
-OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
-  using 1 OpenMP thread(s) per MPI task
 # mpirun -np 16 lmp -in input.in
 # mpirun -np 6 lmp -in input.in
 
 # npt1 -> npt2 -> nve
 # npt1: input: initial/random coordinates for all particles
-# npt1: settup temp, pressure, atoms, ... with small timestep: 0.0005/0.0001 because the intial energy is large
+# npt1: settup temp, pressure, atoms, ... with small timestep: 0.0005/0.0001 because the intial energy is large 
 # npt1: output restart1.dat
 # npt2: input restart.dat, set up with the bigger timestep: 0.001 (1fs)
 # npt2: output restart2.dat
@@ -22,25 +19,15 @@ atom_style	    charge                          # electrostatic interactions
 
 # read the mass, coordinates of particles and box size
 read_data	dataCPS_5.dat
-Reading data file ...
-  orthogonal box = (-1.5 -1.5 -1.5) to (43.8663 43.8663 43.8663)
-  1 by 2 by 3 MPI processor grid
-  reading atoms ...
-  5415 atoms
-  read_data CPU = 0.015 seconds
 # read_restart	restart_CPS.dat             # for the latter simulation
 
 # particle types
-group 		Ca    type    1
-665 atoms in group Ca
-group 		P     type    2
-190 atoms in group P
+group 		Na    type    1
+group 		Li    type    2
 group 		Si    type    3
-1140 atoms in group Si
 group 		O     type    4
-3420 atoms in group O
 
-# Assign charges to ions
+# Assign charges to ions/do not need, Lammps automatically gives this
 #set type 1 charge +2.0   # Ca²⁺
 #set type 2 charge +5.0   # P⁵⁺
 #set type 3 charge +4.0   # Si⁴⁺
@@ -72,7 +59,7 @@ pair_coeff	3 4  1847.7          0.287145        0.0
 pair_coeff	4 4  1497594.3       0.169492        17.4
 
 #  The accuracy of the Ewald summation
-kspace_style ewald/disp 1e-4
+kspace_style ewald/disp 1e-4 
 
 # Set neighour atom list/skin distance 10 + 0.3 = 10.3
 # Do not need to modify
@@ -84,13 +71,13 @@ neigh_modify	delay 10
 
 # print out with thermo each 100 timesteps
 thermo		100
-timestep	0.0005
+timestep	0.0005          #0.001 = 1 fs
 
 thermo_style	custom	step	temp	press	vol	density	pe	ke	etotal
 
 # output trajectory to xyz file every 50000 timesteps
 # do not need to change
-dump 		1 all xyz 50000 trajectory.xyz
+dump 		1 all xyz 50000 trajectory.xyz 
 dump_modify	1 element  1 2 3 4
 
 
@@ -100,10 +87,6 @@ dump_modify	1 element  1 2 3 4
 # iso: pressure is controlled isotropically
 # 10: damping parameter for temp/press
 fix 1 all npt temp ${TK1} ${TK1} 10 iso ${Pbar1} ${Pbar1} 10
-fix 1 all npt temp 3000 ${TK1} 10 iso ${Pbar1} ${Pbar1} 10
-fix 1 all npt temp 3000 3000 10 iso ${Pbar1} ${Pbar1} 10
-fix 1 all npt temp 3000 3000 10 iso 1 ${Pbar1} 10
-fix 1 all npt temp 3000 3000 10 iso 1 1 10
 
 # 2st: run the nve after getting the equilibrium state
 # fix 1 all nve
@@ -116,4 +99,16 @@ fix 2  Ca 	ave/time  1  1    1000  c_1[4]   file  CPS_Ca.msd
 compute 	2	P 	msd
 fix 3  P 	ave/time  1  1    1000  c_2[4]   file  CPS_P.msd
 compute 	3	Si 	msd
-fix 4  S
+fix 4  Si 	ave/time  1  1    1000  c_3[4]   file  CPS_Si.msd
+compute 	4	O 	msd
+fix 5  O 	ave/time  1  1    1000  c_4[4]   file  CPS_O.msd
+
+# run with nsteps steps
+run ${nsteps}
+
+# write files
+# for writing the final results
+write_restart    xx.dat
+
+# for writing each nsteps steps/track losing
+# restart    ${nsteps}  restart_CPS.dat
