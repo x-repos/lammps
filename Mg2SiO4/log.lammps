@@ -1,0 +1,243 @@
+LAMMPS (29 Aug 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+# mpirun -np 16 lmp -in input.in
+# mpirun -np 6 lmp -in input.in
+
+# npt1 -> npt2 -> nve
+# npt1: input: initial/random coordinates for all particles
+# npt1: settup temp, pressure, atoms, ... with small timestep: 0.0005/0.0001 because the intial energy is large
+# npt1: output restart1.dat
+# npt2: input restart.dat, set up with the bigger timestep: 0.001 (1fs)
+# npt2: output restart2.dat
+# nve: input restart2.dat
+
+# inputs and settup
+units		    metal                           # amstrong, bar, eV, K, ...
+variable    	TK1 equal 3000                  # temperature
+variable    	Pbar1 equal 1.0e0               # pressure
+variable        nsteps equal 1000               # number of time steps
+boundary	    p p p                           # periodic boudaries
+atom_style	    charge                          # electrostatic interactions
+
+# read the mass, coordinates of particles and box size
+read_data	data-4.tsv
+Reading data file ...
+  orthogonal box = (-0.5 -0.5 -0.5) to (53.5 53.5 53.5)
+  1 by 2 by 3 MPI processor grid
+  reading atoms ...
+  10017 atoms
+  read_data CPU = 0.025 seconds
+# read_restart	restart_CPS.dat             # for the latter simulation
+
+# particle types
+group 		Mg    type    1
+2861 atoms in group Mg
+group 		Si    type    2
+1431 atoms in group Si
+group 		O    type    3
+5725 atoms in group O
+
+# Assign charges to ions/do not need, Lammps automatically gives this
+#set type 1 charge +2.0   # Ca²⁺
+#set type 2 charge +5.0   # P⁵⁺
+#set type 3 charge +4.0   # Si⁴⁺
+#set type 4 charge -2.0   # O²⁻
+
+# set velocity based on the velocity
+# 3000: temperature
+# 277387: random number seed
+# mom yes: total momentum of the system is zero
+velocity	all create 3000 277387 mom yes
+
+# buck: Buckingham potential for short range interactions
+# coul: Coulomb potential for long range interactions
+# long: long-range corrections applied to the Coulombic interactions using Ewald summation or PPPM
+# 10: cutoff distance.Within 10 A, Buckingham and Coulomb potentials are applied.
+# Beyond 10 A. Buckingham is not applied. Coulomb potential is corrected using Ewald.
+
+pair_style hybrid/overlay morse 5.5 lj/cut 5.5 coul/long 15.0
+
+# Morse potential for Mg-O, Si-O, and O-O
+pair_coeff 1 3 morse 0.038908 2.281000 2.586153
+pair_coeff 2 3 morse 0.340554 2.006700 2.100000
+pair_coeff 3 3 morse 0.042395 1.379316 3.618701
+
+# Repulsive term using lj/cut for Mg-O, Si-O, and O-O
+pair_coeff 1 3 lj/cut 0.0 5.0 5.5  # Repulsion for Mg-O
+pair_coeff 2 3 lj/cut 0.0 1.0 5.5  # Repulsion for Si-O
+pair_coeff 3 3 lj/cut 0.0 22.0 5.5 # Repulsion for O-O
+
+# Coulombic interactions
+pair_coeff * * coul/long
+
+
+#  The accuracy of the Ewald summation
+kspace_style ewald/disp 1e-4
+
+# Set neighour atom list/skin distance 10 + 0.3 = 10.3
+# Do not need to modify
+neighbor	0.3 bin
+neigh_modify	delay 10
+
+# NVE ensemble simulaton with dt=1 fs
+# fix		1 all nve
+
+# print out with thermo each 100 timesteps
+thermo		100
+timestep	0.0005          #0.001 = 1 fs
+
+thermo_style	custom	step	temp	press	vol	density	pe	ke	etotal
+
+# output trajectory to xyz file every 50000 timesteps
+# do not need to change
+dump 		1 all xyz 50000 trajectory.xyz
+dump_modify	1 element  1 2 3
+
+
+
+# 1st: run the npt
+# starting temp/press -> target temp/press
+# iso: pressure is controlled isotropically
+# 10: damping parameter for temp/press
+fix 1 all npt temp ${TK1} ${TK1} 10 iso ${Pbar1} ${Pbar1} 10
+fix 1 all npt temp 3000 ${TK1} 10 iso ${Pbar1} ${Pbar1} 10
+fix 1 all npt temp 3000 3000 10 iso ${Pbar1} ${Pbar1} 10
+fix 1 all npt temp 3000 3000 10 iso 1 ${Pbar1} 10
+fix 1 all npt temp 3000 3000 10 iso 1 1 10
+
+# 2st: run the nve after getting the equilibrium state
+# fix 1 all nve
+
+# compute mean squared distance
+# do not need to change
+# compute 	1	all	msd
+#compute 	1	Ca 	msd
+#fix 2  Ca 	ave/time  1  1    1000  c_1[4]   file  CPS_Ca.msd
+#compute 	2	P 	msd
+#fix 3  P 	ave/time  1  1    1000  c_2[4]   file  CPS_P.msd
+#compute 	3	Si 	msd
+#fix 4  Si 	ave/time  1  1    1000  c_3[4]   file  CPS_Si.msd
+#compute 	4	O 	msd
+#fix 5  O 	ave/time  1  1    1000  c_4[4]   file  CPS_O.msd
+
+# run with nsteps steps
+run ${nsteps}
+run 1000
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- Type Label Framework: https://doi.org/10.1021/acs.jpcb.3c08419
+
+@Article{Gissinger24,
+ author = {Jacob R. Gissinger, Ilia Nikiforov, Yaser Afshar, Brendon Waters, Moon-ki Choi, Daniel S. Karls, Alexander Stukowski, Wonpil Im, Hendrik Heinz, Axel Kohlmeyer, and Ellad B. Tadmor},
+ title = {Type Label Framework for Bonded Force Fields in LAMMPS},
+ journal = {J. Phys. Chem. B},
+ year =    2024,
+ volume =  128,
+ number =  13,
+ pages =   {3282–-3297}
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+EwaldDisp initialization ...
+Generated 0 of 3 mixed pair_coeff terms from geometric mixing rule
+WARNING: System is not charge neutral, net charge = -2.4 (src/kspace.cpp:327)
+WARNING: System is not charge neutral, net charge = -2.4 (src/KSPACE/ewald_disp.cpp:223)
+  G vector = 0.1873004,   accuracy = 0.0014399645
+Generated 0 of 3 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 10 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 15.3
+  ghost atom cutoff = 15.3
+  binsize = 7.65, bins = 8 8 8
+  6 neighbor lists, perpetual/occasional/extra = 6 0 0
+  (1) pair morse, perpetual, trim from (2)
+      attributes: half, newton on, cut 5.8
+      pair build: trim
+      stencil: none
+      bin: none
+  (2) pair lj/cut, perpetual, trim from (4)
+      attributes: half, newton on, cut 5.8
+      pair build: trim
+      stencil: none
+      bin: none
+  (3) pair coul/long, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d
+      bin: standard
+  (4) pair morse, perpetual, skip from (3)
+      attributes: half, newton on
+      pair build: skip
+      stencil: none
+      bin: none
+  (5) pair lj/cut, perpetual, copy from (4)
+      attributes: half, newton on
+      pair build: copy
+      stencil: none
+      bin: none
+  (6) pair coul/long, perpetual, copy from (3)
+      attributes: half, newton on
+      pair build: copy
+      stencil: none
+      bin: none
+  vectors: nbox = 10, nkvec = 2084
+Per MPI rank memory allocation (min/avg/max) = 32.69 | 33.21 | 33.47 Mbytes
+   Step          Temp          Press          Volume        Density         PotEng         KinEng         TotEng    
+         0   3000           109048.23      157464         2.1230601     -9580.6673      3884.0088     -5696.6585    
+       100   55849.194      741058.65      157575.68      2.1215555     -78071.693      72306.254     -5765.4391    
+       200   57065.943      739101.73      158007.67      2.1157551     -79932.511      73881.542     -6050.9685    
+       300   57499.844      725755.42      158753.37      2.1058169     -80988.559      74443.301     -6545.2582    
+       400   56759.244      712186.87      159738.43      2.0928311     -80681.555      73484.469     -7197.0857    
+       500   56797.951      702376.92      160818.1       2.0787806     -81457.327      73534.581     -7922.7452    
+       600   56052.894      694686.31      161857.06      2.0654369     -81205.206      72569.978     -8635.2276    
+       700   55831.527      674150.98      162817.46      2.0532536     -81578.208      72283.382     -9294.8263    
+       800   55577.394      671847.4       163740.62      2.0416775     -81872.512      71954.363     -9918.1491    
+       900   55190.379      656304.01      164673.85      2.0301071     -81975.982      71453.306     -10522.676    
+      1000   54572.187      644653.7       165630.17      2.0183855     -81778.498      70652.952     -11125.546    
+Loop time of 51.5211 on 6 procs for 1000 steps with 10017 atoms
+
+Performance: 0.838 ns/day, 28.623 hours/ns, 19.410 timesteps/s, 194.425 katom-step/s
+99.6% CPU use with 6 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 16.052     | 17.532     | 19.112     |  23.8 | 34.03
+Kspace  | 28.737     | 29.465     | 30.592     |  12.4 | 57.19
+Neigh   | 1.8919     | 1.9777     | 2.0647     |   4.6 |  3.84
+Comm    | 1.3507     | 2.2976     | 2.7844     |  31.8 |  4.46
+Output  | 0.0003989  | 0.00041948 | 0.0005165  |   0.0 |  0.00
+Modify  | 0.1872     | 0.18849    | 0.18951    |   0.2 |  0.37
+Other   |            | 0.05979    |            |       |  0.12
+
+Nlocal:         1669.5 ave        1743 max        1599 min
+Histogram: 1 1 0 0 0 1 2 0 0 1
+Nghost:        12955.3 ave       13031 max       12875 min
+Histogram: 2 0 0 0 0 0 2 1 0 1
+Neighs:         757316 ave      808496 max      703944 min
+Histogram: 1 0 0 1 1 0 2 0 0 1
+
+Total # of neighbors = 4543898
+Ave neighs/atom = 453.61865
+Neighbor list builds = 100
+Dangerous builds = 100
+
+# write files
+# for writing the final results
+write_restart    xx.dat
+System init for write_restart ...
+EwaldDisp initialization ...
+Generated 0 of 3 mixed pair_coeff terms from geometric mixing rule
+WARNING: System is not charge neutral, net charge = -2.4 (src/KSPACE/ewald_disp.cpp:223)
+  G vector = 0.18700022,   accuracy = 0.0014399645
+Generated 0 of 3 mixed pair_coeff terms from geometric mixing rule
+
+# for writing each nsteps steps/track losing
+# restart    ${nsteps}  restart_CPS.dat
+Total wall time: 0:00:51

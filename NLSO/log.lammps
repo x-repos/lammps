@@ -1,0 +1,26 @@
+LAMMPS (29 Aug 2024)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+# mpirun -np 16 lmp -in input.in
+# mpirun -np 6 lmp -in input.in
+
+# npt1 -> npt2 -> nve
+# npt1: input: initial/random coordinates for all particles
+# npt1: settup temp, pressure, atoms, ... with small timestep: 0.0005/0.0001 because the intial energy is large
+# npt1: output restart1.dat
+# npt2: input restart.dat, set up with the bigger timestep: 0.001 (1fs)
+# npt2: output restart2.dat
+# nve: input restart2.dat
+
+# inputs and settup
+units		    metal                           # amstrong, bar, eV, K, ...
+variable    	TK1 equal 3000                  # temperature
+variable    	Pbar1 equal 1.0e0               # pressure
+variable        nsteps equal 1000               # number of time steps
+boundary	    p p p                           # periodic boudaries
+atom_style	    charge                          # electrostatic interactions
+
+# read the mass, coordinates of particles and box size
+read_data	dataCPS_5.dat
+ERROR: Cannot open file dataCPS_5.dat: No such file or directory (src/read_data.cpp:367)
+Last command: read_data	dataCPS_5.dat
