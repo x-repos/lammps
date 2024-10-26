@@ -1,4 +1,21 @@
-Row	Column2	Column3	Column4	Column5	Column6
+# hoanganh_nguyen@mines.edu
+# Na20-Li20-SiO2
+
+9999  atoms
+4  atom types
+-0.5 53.5  xlo xhi 
+-0.5 53.5  ylo yhi 
+-0.5 53.5  zlo zhi 
+ 
+Masses 
+
+1  22.98977
+2  6.941
+3  28.0855
+4  15.9994
+
+Atoms 
+
 1	1	0.6	20.28088	51.23234	17.56391
 2	1	0.6	36.32487	32.04741	41.62393
 3	1	0.6	9.94849	41.31127	1.83161
