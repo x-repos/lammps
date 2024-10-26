@@ -42,3 +42,4 @@ CSV.write("data-3.tsv", df, delim='\t')
 maximum(df.Column4)
 maximum(df.Column5)
 maximum(df.Column6)
+Na
